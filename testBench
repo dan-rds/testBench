@@ -1,0 +1,59 @@
+#!/bin/bash
+# Created by Daniel Richards (ddrichar@ucsc.edu)
+# on 11\14\17 
+
+ARRAY=( README Makefile $1.java $2-input.txt $2-output.txt)
+
+if [ $1 == '-h' ]; then
+    echo "Run with ./testBench [main class name] [test files prefix]"
+	echo "		a) main class name is just that, the main class without the .class suffix."
+	echo "		b) [test files prefix] is either test (for test-input.txt and test-output.txt)"
+	echo "		   or more (for more-input.txt and more-output.txt)"
+	echo "	For example, for HW4, this command would look like"
+ 	echo "		./testBench SlugFest test"
+ 	exit
+
+fi
+
+if [ $# -ne 2 ]; then
+    echo "Illegal parameters, try -h option for help"
+    exit
+fi
+
+echo "-------- Checking file are present --------"
+
+for f in "${ARRAY[@]}"; do
+	if [ -e $f ]; then
+		echo $f check
+	else 
+		echo $f does NOT exist
+		exit
+	fi 
+done 
+
+echo "------- Cleaning -------"
+make clean 
+echo "-------- Making --------"
+make 
+echo "-------- Rechecking file --------"
+
+ARRAY_COMPILED=( $1.jar $1.class )
+for f in "${ARRAY_COMPILED[@]}"; do
+	if [ -e $f ]; then
+		echo $f check
+	else 
+		echo $f was NOT created
+		exit
+	fi 
+done 
+
+echo "-------- Running --------"
+java -jar ./$1.jar $2-input.txt temp-output.txt
+
+echo "-------- Comparing $2-input.txt and temp-output.txt --------"
+if [[ $(comm -23 $2-output.txt temp-output.txt | wc -c) -eq 0  ]]; then
+    echo "Generated outputs are the same!"
+else
+   echo "Prof's output :						      Your output :"
+	diff -y --suppress-common-lines $2-output.txt temp-output.txt
+fi
